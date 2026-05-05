@@ -1,6 +1,9 @@
 package main
 
 import (
+	"embed"
+	"io/fs"
+	"net/http"
 	"os"
 
 	"mi-api-go/db"
@@ -10,8 +13,11 @@ import (
 	"github.com/gin-gonic/gin"
 
 	repoPostgres "mi-api-go/repository/postgres"
-	repoSurreal "mi-api-go/repository/surrealdb"
+	repoSurreal  "mi-api-go/repository/surrealdb"
 )
+
+//go:embed frontend
+var frontendFS embed.FS
 
 func main() {
 	usarDB := os.Getenv("DB_BACKEND")
@@ -37,8 +43,32 @@ func main() {
 	}
 
 	r := gin.Default()
-	r.GET("/productos", productoHandler.GetAll)
-	r.GET("/productos/:id", productoHandler.GetById)
-	r.POST("/productos", productoHandler.Create)
+
+	// Serve embedded frontend
+	subFS, _ := fs.Sub(frontendFS, "frontend")
+
+	serve := func(name, mime string) gin.HandlerFunc {
+		return func(c *gin.Context) {
+			data, err := fs.ReadFile(subFS, name)
+			if err != nil {
+				c.Status(http.StatusNotFound)
+				return
+			}
+			c.Data(http.StatusOK, mime, data)
+		}
+	}
+
+	r.GET("/", serve("index.html", "text/html; charset=utf-8"))
+	r.GET("/style.css", serve("style.css", "text/css; charset=utf-8"))
+	r.GET("/app.js", serve("app.js", "application/javascript; charset=utf-8"))
+
+	// API routes
+	api := r.Group("/api")
+	api.GET("/productos", productoHandler.GetAll)
+	api.GET("/productos/:id", productoHandler.GetById)
+	api.POST("/productos", productoHandler.Create)
+	api.PUT("/productos/:id", productoHandler.Update)
+	api.DELETE("/productos/:id", productoHandler.Delete)
+
 	r.Run(":8080")
 }
