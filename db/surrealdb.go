@@ -31,3 +31,7 @@ func ConectarSurreal(url, user, pass, ns, dbName string) {
 	SurrealDB = db
 	log.Println("SurrealDB conectado exitosamente")
 }
+
+func EstaConectado() bool {
+	return SurrealDB != nil
+}
