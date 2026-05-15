@@ -29,11 +29,9 @@ func ConectarSurreal(url, user, pass, ns, dbName string) {
 	}
 
 	SurrealDB = db
-	log.Println("SurrealDB conectado")
+	log.Println("SurrealDB conectado exitosamente")
 }
 
-git add .
-
-git commit -m "docs: minor update
-
-Co-authored-by: josea666 <arieldomingues88@gmail.com>"
+func EstaConectado() bool {
+	return SurrealDB != nil
+}
